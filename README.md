@@ -6,7 +6,7 @@ Built for the supplied Trao assessment. The kit keys follow Appendix A, and the 
 
 ## Run locally
 
-Requires Node.js 22.18+ and npm. In this delivered workspace, **`.env` already exists with the supplied MongoDB and Gemini credentials**. It is git-ignored. There is intentionally no `.env.example`, as requested.
+Requires Node.js 22.18+ and npm. In this delivered workspace, **`.env` already exists with the supplied MongoDB and Gemini credentials**.
 
 ```sh
 npm ci
