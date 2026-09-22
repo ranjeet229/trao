@@ -407,18 +407,32 @@ input[type='checkbox'] {
 .recent-label {
   margin-top: 39px;
 }
+.recent-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
 .recent-item {
   display: flex;
   align-items: center;
-  gap: 10px;
   width: 100%;
-  padding: 12px 10px;
-  font-size: 11px;
-  text-align: left;
   border-radius: 6px;
   color: #788472;
 }
-.recent-item > span:nth-child(2) {
+.recent-open {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  padding: 12px 10px;
+  font-size: 11px;
+  text-align: left;
+  color: inherit;
+}
+.recent-open > span:nth-child(2) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -428,6 +442,65 @@ input[type='checkbox'] {
 .recent-item.selected {
   background: #e7ede0;
   color: var(--green);
+}
+.recent-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: 7px;
+}
+.recent-menu-trigger {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: #84917d;
+  opacity: 0;
+}
+.recent-item:hover .recent-menu-trigger,
+.recent-menu-trigger:focus-visible,
+.recent-menu-trigger[aria-expanded='true'] {
+  opacity: 1;
+}
+.recent-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 5px);
+  right: 0;
+  min-width: 132px;
+  padding: 5px;
+  border: 1px solid #d9e0d4;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 24px #1f321d1c;
+  transform-origin: right top;
+  animation: recent-menu-in 160ms ease-out both;
+}
+@keyframes recent-menu-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.recent-menu button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  padding: 8px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  text-align: left;
+}
+.recent-menu-delete {
+  color: #b45e4b;
+}
+.recent-menu-delete:hover,
+.recent-menu-delete:focus-visible {
+  background: #fff1ed;
 }
 .recent-dot {
   width: 5px;
@@ -504,31 +577,14 @@ input[type='checkbox'] {
   padding: 0 44px;
   background: #fdfefb;
 }
-.breadcrumbs {
+.topbar > div {
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: 11px;
   color: #92988b;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  flex-wrap: wrap;
 }
-.breadcrumbs li {
-  display: flex;
-  align-items: center;
-}
-.breadcrumbs a {
-  color: inherit;
-  border-radius: 3px;
-}
-.breadcrumbs a:hover {
-  color: var(--green);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.breadcrumbs [aria-current='page'] {
+.topbar strong {
   font-weight: 400;
   color: #56614f;
 }
@@ -1537,6 +1593,64 @@ input[type='checkbox'] {
 .modal-foot small {
   color: #8e9982;
   max-width: 220px;
+}
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(20 31 24 / 52%);
+  backdrop-filter: blur(3px);
+}
+.confirm-dialog {
+  width: min(470px, 100%);
+  padding: 26px;
+  border: 1px solid #dce5d3;
+  border-radius: 12px;
+  background: #fcfdf9;
+  box-shadow: 0 18px 45px #15271952;
+}
+.confirm-icon {
+  float: left;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #fff1ed;
+  color: #a9503a;
+}
+.confirm-copy {
+  padding-left: 47px;
+}
+.confirm-dialog h2 {
+  margin: 1px 0 8px;
+  font-family: Georgia, serif;
+  font-size: 23px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+.confirm-dialog p {
+  margin: 0;
+  color: #68766a;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 24px;
+  clear: both;
+}
+.btn.danger {
+  background: #a9503a;
+  color: #fff;
+}
+.btn.danger:hover {
+  background: #8f4130;
 }
 .upload-row {
   display: flex;

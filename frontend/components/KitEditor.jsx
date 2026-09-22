@@ -340,6 +340,28 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                 <span className="eyebrow">READ BETWEEN THE LINES</span>
                 <h2>What this role calls for.</h2>
               </div>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  update({
+                    ...kit,
+                    role: {
+                      ...kit.role,
+                      requirements: [
+                        {
+                          id: uid('r'),
+                          text: 'New requirement',
+                          kind: 'technical',
+                          priority: 'nice',
+                        },
+                        ...kit.role.requirements,
+                      ],
+                    },
+                  })
+                }
+              >
+                <Plus size={16} /> Add requirement
+              </Button>
             </div>
             <div className="form-grid">
               <Field label="Role title">
@@ -472,28 +494,6 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                 </div>
               </div>
             ))}
-            <Button
-              variant="secondary"
-              onClick={() =>
-                update({
-                  ...kit,
-                  role: {
-                    ...kit.role,
-                    requirements: [
-                      ...kit.role.requirements,
-                      {
-                        id: uid('r'),
-                        text: 'New requirement',
-                        kind: 'technical',
-                        priority: 'nice',
-                      },
-                    ],
-                  },
-                })
-              }
-            >
-              <Plus size={15} /> Add requirement
-            </Button>
           </section>
         )}
         {tab === 'questions' && (

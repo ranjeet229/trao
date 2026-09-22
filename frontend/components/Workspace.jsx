@@ -15,6 +15,7 @@ import {
   Search,
   ChevronRight,
   Trash2,
+  MoreHorizontal,
   LoaderCircle,
 } from 'lucide-react';
 import { api, Button, Notice, Tag, Empty } from './ui';
@@ -22,6 +23,7 @@ import IconButton from './IconButton';
 import NewKit from './NewKit';
 import KitEditor from './KitEditor';
 import Practice from './Practice';
+import ConfirmDialog from './ConfirmDialog';
 
 export default function Workspace() {
   const [user, setUser] = useState(null),
@@ -33,11 +35,15 @@ export default function Workspace() {
     [loading, setLoading] = useState(true),
     [mode, setMode] = useState('builder'),
     [search, setSearch] = useState(''),
-    [dirty, setDirty] = useState(false);
+    [dirty, setDirty] = useState(false),
+    [confirmation, setConfirmation] = useState(null),
+    [recentMenu, setRecentMenu] = useState(null);
   const recordRef = useRef(record);
   recordRef.current = record;
   const dirtyRef = useRef(dirty);
   dirtyRef.current = dirty;
+  const recentMenuRef = useRef(null);
+  const recentMenuCloseRef = useRef(null);
   const loadList = useCallback(async () => {
     const data = await api('/kits');
     setKits(data.kits);
@@ -80,23 +86,68 @@ export default function Workspace() {
       clearInterval(interval);
     };
   }, [selected, loadList]);
-  function navigate(id) {
-    if (dirty && !window.confirm('You have unsaved edits. Leave this kit and discard them?'))
-      return false;
+  useEffect(() => {
+    if (!recentMenu) return;
+    const closeMenu = (event) => {
+      if (!recentMenuRef.current?.contains(event.target)) setRecentMenu(null);
+    };
+    window.addEventListener('pointerdown', closeMenu);
+    return () => window.removeEventListener('pointerdown', closeMenu);
+  }, [recentMenu]);
+  useEffect(
+    () => () => {
+      clearTimeout(recentMenuCloseRef.current);
+    },
+    [],
+  );
+  function keepRecentMenuOpen() {
+    clearTimeout(recentMenuCloseRef.current);
+  }
+  function closeRecentMenuAfterExit(id) {
+    keepRecentMenuOpen();
+    recentMenuCloseRef.current = setTimeout(() => {
+      setRecentMenu((open) => (open === id ? null : open));
+    }, 180);
+  }
+  function completeNavigation(id) {
     setDirty(false);
     setSelected(id);
     setMode('builder');
     setError('');
-    return true;
   }
-  function navigateHome(event) {
-    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
-      return;
-    event.preventDefault();
-    if (navigate(null)) window.scrollTo({ top: 0 });
+  function navigate(id) {
+    setRecentMenu(null);
+    if (!dirty) {
+      completeNavigation(id);
+      return true;
+    }
+    setConfirmation({
+      title: 'Discard unsaved edits?',
+      message: 'You have unsaved edits. Leave this kit and discard them?',
+      confirmLabel: 'Discard edits',
+      onConfirm: () => {
+        setConfirmation(null);
+        completeNavigation(id);
+      },
+    });
+    return false;
   }
   async function logout() {
-    if (dirty && !window.confirm('Discard unsaved edits and sign out?')) return;
+    if (dirty) {
+      setConfirmation({
+        title: 'Discard edits and sign out?',
+        message: 'Your unsaved changes will be lost when you sign out.',
+        confirmLabel: 'Sign out',
+        onConfirm: () => {
+          setConfirmation(null);
+          void signOut();
+        },
+      });
+      return;
+    }
+    await signOut();
+  }
+  async function signOut() {
     try {
       await api('/auth/logout', { method: 'POST' });
       window.location.assign('/login');
@@ -105,10 +156,21 @@ export default function Workspace() {
     }
   }
   async function remove(id) {
-    if (!window.confirm('Delete this kit and its practice history?')) return;
+    setRecentMenu(null);
+    setConfirmation({
+      title: 'Delete this prep kit?',
+      message: 'This also removes its flashcard practice history. This action cannot be undone.',
+      confirmLabel: 'Delete kit',
+      onConfirm: () => {
+        setConfirmation(null);
+        void deleteKit(id);
+      },
+    });
+  }
+  async function deleteKit(id) {
     try {
       await api(`/kits/${id}`, { method: 'DELETE' });
-      if (selected === id) navigate(null);
+      if (selected === id) completeNavigation(null);
       await loadList();
     } catch (e) {
       setError(e.message);
@@ -134,16 +196,48 @@ export default function Workspace() {
         </Button>
         <div className="sidebar-label recent-label">RECENT OPPORTUNITIES</div>
         <div className="recent-list">
-          {kits.slice(0, 5).map((k) => (
-            <button
-              key={k._id}
-              className={`recent-item ${selected === k._id ? 'selected' : ''}`}
-              onClick={() => navigate(k._id)}
-            >
-              <span className="recent-dot" />
-              <span>{k.title}</span>
-              <ChevronRight size={14} />
-            </button>
+          {kits.map((k) => (
+            <div key={k._id} className={`recent-item ${selected === k._id ? 'selected' : ''}`}>
+              <button className="recent-open" onClick={() => navigate(k._id)}>
+                <span className="recent-dot" />
+                <span>{k.title}</span>
+                <ChevronRight size={14} />
+              </button>
+              <div
+                className="recent-actions"
+                ref={recentMenu === k._id ? recentMenuRef : null}
+                onMouseLeave={() => closeRecentMenuAfterExit(k._id)}
+              >
+                <IconButton
+                  className="recent-menu-trigger"
+                  aria-label={`Actions for ${k.title}`}
+                  aria-expanded={recentMenu === k._id}
+                  onClick={() => {
+                    keepRecentMenuOpen();
+                    setRecentMenu((open) => (open === k._id ? null : k._id));
+                  }}
+                >
+                  <MoreHorizontal size={16} />
+                </IconButton>
+                {recentMenu === k._id && (
+                  <div
+                    className="recent-menu"
+                    role="menu"
+                    aria-label={`${k.title} actions`}
+                    onMouseEnter={keepRecentMenuOpen}
+                    onMouseLeave={() => setRecentMenu(null)}
+                  >
+                    <button
+                      role="menuitem"
+                      className="recent-menu-delete"
+                      onClick={() => remove(k._id)}
+                    >
+                      <Trash2 size={15} /> Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           ))}
           {!kits.length && (
             <p className="sidebar-empty">
@@ -173,37 +267,11 @@ export default function Workspace() {
       </aside>
       <div className="main-area">
         <header className="topbar">
-          <nav aria-label="Breadcrumb">
-            <ol className="breadcrumbs">
-              <li>
-                <a href="/" onClick={navigateHome}>
-                  Workspace
-                </a>
-              </li>
-              <li aria-hidden="true">
-                <ChevronRight size={14} />
-              </li>
-              <li>
-                {selected ? (
-                  <a href="/" onClick={navigateHome}>
-                    My preparation
-                  </a>
-                ) : (
-                  <span aria-current="page">My preparation</span>
-                )}
-              </li>
-              {selected && (
-                <>
-                  <li aria-hidden="true">
-                    <ChevronRight size={14} />
-                  </li>
-                  <li>
-                    <span aria-current="page">Prep kit</span>
-                  </li>
-                </>
-              )}
-            </ol>
-          </nav>
+          <div>
+            <span>Workspace</span>
+            <ChevronRight size={14} />
+            <strong>{selected ? 'Prep kit' : 'My preparation'}</strong>
+          </div>
           <span className="topbar-note">
             <span /> A little more ready, every day
           </span>
@@ -491,6 +559,7 @@ export default function Workspace() {
           }}
         />
       )}
+      <ConfirmDialog confirmation={confirmation} onCancel={() => setConfirmation(null)} />
     </div>
   );
 }

@@ -127,14 +127,24 @@ test('register, generate, edit, practise, reopen, mobile and logout', async ({ p
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
-  await page
-    .getByRole('navigation', { name: 'Breadcrumb' })
-    .getByRole('link', { name: 'My preparation', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'All opportunities', exact: true }).click();
   await page.getByRole('button', { name: 'Open kit', exact: true }).click();
   await expect(page.getByLabel('Company summary', { exact: true })).toHaveValue(
     'My carefully edited company brief.',
   );
+  await page
+    .getByLabel('Company summary', { exact: true })
+    .fill('A draft that should not be lost by cancel.');
+  await page.getByRole('button', { name: 'All opportunities', exact: true }).click();
+  await expect(page.getByRole('alertdialog')).toContainText('Discard unsaved edits?');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByLabel('Company summary', { exact: true })).toHaveValue(
+    'A draft that should not be lost by cancel.',
+  );
+  await page.getByRole('button', { name: 'All opportunities', exact: true }).click();
+  await page.getByRole('button', { name: 'Discard edits', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Walk in prepared.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Open kit', exact: true }).click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.goto('/');
