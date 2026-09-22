@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env
+.env.*
+coverage/
+test-results/
+playwright-report/
+*.log
+output/

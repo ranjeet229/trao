@@ -1,0 +1,4 @@
+[
+  {"id":"backend","jd":"Senior Backend Engineer\nRequirements:\n5+ years of Node.js experience.\nDesign distributed systems and scalable APIs.\nMentor junior engineers.\nBonus: knowledge of Kubernetes.","company_url":"https://posthog.com","days":5},
+  {"id":"frontend","jd":"Frontend Developer\nRequired: React and TypeScript experience.\nCollaborate with designers and communicate trade-offs.\nPreferred: accessibility testing experience.","company_url":"https://about.gitlab.com","days":1}
+]
