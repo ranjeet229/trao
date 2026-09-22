@@ -237,7 +237,6 @@ input[type='checkbox'] {
 }
 .password-toggle:hover,
 .password-toggle:focus-visible {
-  background: var(--sage);
   color: var(--green);
 }
 .field > label {

@@ -19,7 +19,9 @@ const frontend = next({
 });
 await frontend.prepare();
 const app = createApi(db, { production });
-if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
+// Hosted platforms such as Render terminate HTTPS before forwarding to this process.
+// Trust the single platform proxy so secure session cookies can be issued correctly.
+if (production || process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 app.use((req, res, next) => {
   const pathname = req.path;
   if (
