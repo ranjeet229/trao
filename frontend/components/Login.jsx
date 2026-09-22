@@ -1,11 +1,12 @@
 'use client';
 import { useState } from 'react';
-import { ArrowRight, Sparkles, Check, BookOpen } from 'lucide-react';
+import { ArrowRight, Sparkles, Check, BookOpen, Eye, EyeOff } from 'lucide-react';
 import { api, Button, Field, Notice } from './ui';
 export default function Login() {
   const [register, setRegister] = useState(false),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [showPassword, setShowPassword] = useState(false);
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
@@ -93,17 +94,11 @@ export default function Login() {
                 placeholder="you@example.com"
               />
             </Field>
-            <Field label="Password" help={register ? 'At least 10 characters.' : ''}>
-              <input
-                name="password"
-                type="password"
-                autoComplete={register ? 'new-password' : 'current-password'}
-                minLength={10}
-                maxLength={128}
-                required
-                placeholder="Enter your password"
-              />
-            </Field>
+            <PasswordField
+              register={register}
+              showPassword={showPassword}
+              onToggle={() => setShowPassword((visible) => !visible)}
+            />
             <Notice>{error}</Notice>
             <Button busy={busy} type="submit" className="full">
               {register ? 'Create your account' : 'Sign in'}
@@ -125,5 +120,35 @@ export default function Login() {
         </div>
       </section>
     </main>
+  );
+}
+
+function PasswordField({ register, showPassword, onToggle }) {
+  return (
+    <div className="field">
+      <label htmlFor="password">Password</label>
+      <div className="password-field">
+        <input
+          id="password"
+          name="password"
+          type={showPassword ? 'text' : 'password'}
+          autoComplete={register ? 'new-password' : 'current-password'}
+          minLength={10}
+          maxLength={128}
+          required
+          placeholder="Enter your password"
+        />
+        <button
+          type="button"
+          className="password-toggle"
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          aria-pressed={showPassword}
+          onClick={onToggle}
+        >
+          {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+        </button>
+      </div>
+      {register && <small>At least 10 characters.</small>}
+    </div>
   );
 }
