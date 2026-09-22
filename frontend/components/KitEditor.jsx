@@ -13,6 +13,8 @@ import {
   FileJson,
 } from 'lucide-react';
 import { api, Button, Field, Notice, Tag, ExternalLink } from './ui';
+import IconButton from './IconButton';
+import Select from './Select';
 import { allocateSchedule, checkCoverage } from '../../backend/src/core/schedule.js';
 const categories = ['technical', 'behavioural', 'system-design', 'company-fit'];
 const tabs = [
@@ -186,22 +188,22 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
           <Button variant="secondary" onClick={save} busy={busy} disabled={!dirty}>
             <Save size={14} /> Save
           </Button>
-          <button
+          <IconButton
             className="icon-btn"
             title="Export kit JSON"
             aria-label="Export kit JSON"
             onClick={download}
           >
             <Download size={17} />
-          </button>
-          <button
+          </IconButton>
+          <IconButton
             className="icon-btn"
             title="Edit full kit JSON"
             aria-label="Edit full kit JSON"
             onClick={() => setJson(JSON.stringify(kit, null, 2))}
           >
             <FileJson size={17} />
-          </button>
+          </IconButton>
         </div>
       </div>
       <Notice>{error}</Notice>
@@ -385,87 +387,89 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                       })
                     }
                   />
-                  <small className="muted">
+                  <small className="muted requirement-meta">
                     {kit.questions.filter((q) => q.requirement_ids.includes(r.id)).length} linked
                     questions
                   </small>
                 </div>
-                <select
-                  aria-label="Requirement kind"
-                  value={r.kind}
-                  onChange={(e) =>
-                    update({
-                      ...kit,
-                      role: {
-                        ...kit.role,
-                        requirements: kit.role.requirements.map((x) =>
-                          x.id === r.id ? { ...x, kind: e.target.value } : x,
-                        ),
-                      },
-                    })
-                  }
-                >
-                  {['technical', 'behavioural', 'domain'].map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-                <select
-                  aria-label="Requirement priority"
-                  value={r.priority}
-                  onChange={(e) =>
-                    update({
-                      ...kit,
-                      role: {
-                        ...kit.role,
-                        requirements: kit.role.requirements.map((x) =>
-                          x.id === r.id ? { ...x, priority: e.target.value } : x,
-                        ),
-                      },
-                    })
-                  }
-                >
-                  <option value="must">Must have</option>
-                  <option value="nice">Nice to have</option>
-                </select>
-                <button
-                  className="icon-btn"
-                  aria-label="Move requirement up"
-                  disabled={i === 0}
-                  onClick={() =>
-                    update({
-                      ...kit,
-                      role: { ...kit.role, requirements: shift(kit.role.requirements, i, -1) },
-                    })
-                  }
-                >
-                  <ArrowUp size={15} />
-                </button>
-                <button
-                  className="icon-btn"
-                  aria-label="Delete requirement"
-                  onClick={() => {
-                    const requirements = kit.role.requirements.filter((x) => x.id !== r.id);
-                    const questions = kit.questions.map((q) => ({
-                      ...q,
-                      requirement_ids: q.requirement_ids.filter((id) => id !== r.id),
-                    }));
-                    update({
-                      ...kit,
-                      role: { ...kit.role, requirements },
-                      questions,
-                      flashcards: kit.flashcards.map((f) => ({
-                        ...f,
-                        requirement_ids: f.requirement_ids.filter((id) => id !== r.id),
-                      })),
-                      coverage: {
-                        ...kit.coverage,
-                        uncovered_requirement_ids: checkCoverage(requirements, questions),
-                      },
-                    });
-                  }}
-                >
-                  <Trash2 size={15} />
-                </button>
+                <div className="requirement-controls">
+                  <Select
+                    aria-label="Requirement kind"
+                    value={r.kind}
+                    onChange={(e) =>
+                      update({
+                        ...kit,
+                        role: {
+                          ...kit.role,
+                          requirements: kit.role.requirements.map((x) =>
+                            x.id === r.id ? { ...x, kind: e.target.value } : x,
+                          ),
+                        },
+                      })
+                    }
+                  >
+                    {['technical', 'behavioural', 'domain'].map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
+                  </Select>
+                  <Select
+                    aria-label="Requirement priority"
+                    value={r.priority}
+                    onChange={(e) =>
+                      update({
+                        ...kit,
+                        role: {
+                          ...kit.role,
+                          requirements: kit.role.requirements.map((x) =>
+                            x.id === r.id ? { ...x, priority: e.target.value } : x,
+                          ),
+                        },
+                      })
+                    }
+                  >
+                    <option value="must">Must have</option>
+                    <option value="nice">Nice to have</option>
+                  </Select>
+                  <IconButton
+                    className="icon-btn"
+                    aria-label="Move requirement up"
+                    disabled={i === 0}
+                    onClick={() =>
+                      update({
+                        ...kit,
+                        role: { ...kit.role, requirements: shift(kit.role.requirements, i, -1) },
+                      })
+                    }
+                  >
+                    <ArrowUp size={15} />
+                  </IconButton>
+                  <IconButton
+                    className="icon-btn"
+                    aria-label="Delete requirement"
+                    onClick={() => {
+                      const requirements = kit.role.requirements.filter((x) => x.id !== r.id);
+                      const questions = kit.questions.map((q) => ({
+                        ...q,
+                        requirement_ids: q.requirement_ids.filter((id) => id !== r.id),
+                      }));
+                      update({
+                        ...kit,
+                        role: { ...kit.role, requirements },
+                        questions,
+                        flashcards: kit.flashcards.map((f) => ({
+                          ...f,
+                          requirement_ids: f.requirement_ids.filter((id) => id !== r.id),
+                        })),
+                        coverage: {
+                          ...kit.coverage,
+                          uncovered_requirement_ids: checkCoverage(requirements, questions),
+                        },
+                      });
+                    }}
+                  >
+                    <Trash2 size={15} />
+                  </IconButton>
+                </div>
               </div>
             ))}
             <Button
@@ -503,7 +507,6 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                 variant="secondary"
                 onClick={() =>
                   itemsUpdate('questions', [
-                    ...kit.questions,
                     {
                       id: uid('q'),
                       prompt: 'Your new question',
@@ -514,6 +517,7 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                       origin: 'manual',
                       pinned: false,
                     },
+                    ...kit.questions,
                   ])
                 }
               >
@@ -542,7 +546,7 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                   <article className="panel question" key={q.id}>
                     <div className="question-head">
                       <span className="item-number">{String(i + 1).padStart(2, '0')}</span>
-                      <select
+                      <Select
                         aria-label="Question category"
                         value={q.category}
                         onChange={(e) => editItem('questions', q.id, { category: e.target.value })}
@@ -550,34 +554,34 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                         {categories.map((c) => (
                           <option key={c}>{c}</option>
                         ))}
-                      </select>
+                      </Select>
                       <Tag tone={q.origin === 'generated' ? '' : 'warm'}>{q.origin}</Tag>
                       <div className="grow" />
-                      <button
+                      <IconButton
                         className={`icon-btn ${q.pinned ? 'pinned' : ''}`}
                         aria-label={q.pinned ? 'Unpin question' : 'Pin question'}
                         aria-pressed={q.pinned}
                         onClick={() => editItem('questions', q.id, { pinned: !q.pinned })}
                       >
                         <Pin size={15} />
-                      </button>
-                      <button
+                      </IconButton>
+                      <IconButton
                         className="icon-btn"
                         aria-label="Move question up"
                         disabled={i === 0}
                         onClick={() => itemsUpdate('questions', shift(kit.questions, i, -1))}
                       >
                         <ArrowUp size={15} />
-                      </button>
-                      <button
+                      </IconButton>
+                      <IconButton
                         className="icon-btn"
                         aria-label="Move question down"
                         disabled={i === kit.questions.length - 1}
                         onClick={() => itemsUpdate('questions', shift(kit.questions, i, 1))}
                       >
                         <ArrowDown size={15} />
-                      </button>
-                      <button
+                      </IconButton>
+                      <IconButton
                         className="icon-btn"
                         aria-label="Delete question"
                         onClick={() =>
@@ -588,7 +592,7 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                         }
                       >
                         <Trash2 size={15} />
-                      </button>
+                      </IconButton>
                     </div>
                     <Inline
                       label="Question"
@@ -603,7 +607,7 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                     />
                     <div className="question-bottom">
                       <Field label="Difficulty">
-                        <select
+                        <Select
                           value={q.difficulty}
                           onChange={(e) =>
                             editItem('questions', q.id, { difficulty: Number(e.target.value) })
@@ -612,7 +616,7 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                           <option value={1}>1 · Foundation</option>
                           <option value={2}>2 · Applied</option>
                           <option value={3}>3 · Deep dive</option>
-                        </select>
+                        </Select>
                       </Field>
                       <RequirementPicker
                         requirements={kit.role.requirements}
@@ -672,15 +676,15 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                           ]
                         : 'Unseen'}
                     </Tag>
-                    <button
+                    <IconButton
                       className="icon-btn"
                       aria-label="Move flashcard up"
                       disabled={i === 0}
                       onClick={() => itemsUpdate('flashcards', shift(kit.flashcards, i, -1))}
                     >
                       <ArrowUp size={15} />
-                    </button>
-                    <button
+                    </IconButton>
+                    <IconButton
                       className="icon-btn"
                       aria-label="Delete flashcard"
                       onClick={() =>
@@ -691,7 +695,7 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                       }
                     >
                       <Trash2 size={15} />
-                    </button>
+                    </IconButton>
                   </div>
                   <Inline
                     label="Front"
@@ -773,7 +777,7 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                       />
                     </Field>
                     <Field label="Questions for this day">
-                      <select
+                      <Select
                         multiple
                         value={day.question_ids}
                         onChange={(e) =>
@@ -800,11 +804,9 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                             {q.prompt.slice(0, 100)}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </Field>
-                    <small className="muted">
-                      Ctrl / Cmd + click to select multiple questions.
-                    </small>
+                    <small className="muted">Choose multiple questions from the menu.</small>
                   </div>
                   <Field label="Minutes">
                     <input

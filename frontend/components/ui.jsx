@@ -38,15 +38,17 @@ export function Notice({ children, tone = 'error' }) {
 export function Field({ label, help, children }) {
   const id = useId();
   return (
-    <label className="field" htmlFor={id}>
-      <span id={`${id}-label`}>{label}</span>
+    <div className="field">
+      <label id={`${id}-label`} htmlFor={id}>
+        {label}
+      </label>
       {cloneElement(children, {
         id,
         'aria-labelledby': `${id}-label`,
         'aria-describedby': help ? `${id}-help` : undefined,
       })}
       {help && <small id={`${id}-help`}>{help}</small>}
-    </label>
+    </div>
   );
 }
 export function Empty({ icon: Icon, title, children, action }) {

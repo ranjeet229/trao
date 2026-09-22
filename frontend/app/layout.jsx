@@ -1,12 +1,16 @@
 import './globals.css';
+import ToastProvider from '../components/ToastProvider';
 export const metadata = {
-  title: 'Readyroom — Walk in prepared',
+  title: 'Readyroom',
   description: 'A research-backed interview preparation workspace, tailored to your next role.',
 };
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <ToastProvider />
+      </body>
     </html>
   );
 }

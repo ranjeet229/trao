@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import {
   BookOpen,
   LayoutDashboard,
@@ -17,6 +18,7 @@ import {
   LoaderCircle,
 } from 'lucide-react';
 import { api, Button, Notice, Tag, Empty } from './ui';
+import IconButton from './IconButton';
 import NewKit from './NewKit';
 import KitEditor from './KitEditor';
 import Practice from './Practice';
@@ -80,11 +82,18 @@ export default function Workspace() {
   }, [selected, loadList]);
   function navigate(id) {
     if (dirty && !window.confirm('You have unsaved edits. Leave this kit and discard them?'))
-      return;
+      return false;
     setDirty(false);
     setSelected(id);
     setMode('builder');
     setError('');
+    return true;
+  }
+  function navigateHome(event) {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+      return;
+    event.preventDefault();
+    if (navigate(null)) window.scrollTo({ top: 0 });
   }
   async function logout() {
     if (dirty && !window.confirm('Discard unsaved edits and sign out?')) return;
@@ -145,35 +154,56 @@ export default function Workspace() {
           )}
         </div>
         <div className="sidebar-bottom">
-          <div className="sidebar-tip">
-            <Sparkles size={19} />
-            <p>
-              Confidence isn’t a feeling.
-              <br />
-              It’s a little preparation,
-              <br />
-              every day.
-            </p>
-          </div>
           <div className="user-row">
             <span className="avatar">{user?.name?.[0]?.toUpperCase() || 'R'}</span>
             <div>
               <strong>{user?.name || 'Your workspace'}</strong>
               <small>Personal workspace</small>
             </div>
-            <button className="icon-btn" title="Sign out" aria-label="Sign out" onClick={logout}>
+            <IconButton
+              className="icon-btn"
+              title="Sign out"
+              aria-label="Sign out"
+              onClick={logout}
+            >
               <LogOut size={17} />
-            </button>
+            </IconButton>
           </div>
         </div>
       </aside>
       <div className="main-area">
         <header className="topbar">
-          <div>
-            <span>Workspace</span>
-            <ChevronRight size={14} />
-            <strong>{selected ? 'Prep kit' : 'My preparation'}</strong>
-          </div>
+          <nav aria-label="Breadcrumb">
+            <ol className="breadcrumbs">
+              <li>
+                <a href="/" onClick={navigateHome}>
+                  Workspace
+                </a>
+              </li>
+              <li aria-hidden="true">
+                <ChevronRight size={14} />
+              </li>
+              <li>
+                {selected ? (
+                  <a href="/" onClick={navigateHome}>
+                    My preparation
+                  </a>
+                ) : (
+                  <span aria-current="page">My preparation</span>
+                )}
+              </li>
+              {selected && (
+                <>
+                  <li aria-hidden="true">
+                    <ChevronRight size={14} />
+                  </li>
+                  <li>
+                    <span aria-current="page">Prep kit</span>
+                  </li>
+                </>
+              )}
+            </ol>
+          </nav>
           <span className="topbar-note">
             <span /> A little more ready, every day
           </span>
@@ -328,13 +358,13 @@ export default function Workspace() {
                                 ? 'Needs a retry'
                                 : 'In progress'}
                           </Tag>
-                          <button
+                          <IconButton
                             className="icon-btn"
                             aria-label={`Delete ${k.title}`}
                             onClick={() => remove(k._id)}
                           >
                             <Trash2 size={15} />
-                          </button>
+                          </IconButton>
                         </div>
                         <button className="kit-card-title" onClick={() => navigate(k._id)}>
                           <h3>{k.title}</h3>
@@ -390,7 +420,10 @@ export default function Workspace() {
                       className={mode === 'practice' ? 'active' : ''}
                       onClick={() => {
                         if (dirty) {
-                          setError('Save your edits before starting practice.');
+                          toast.warning('Save your edits before starting practice.', {
+                            id: 'unsaved-practice',
+                            duration: 4000,
+                          });
                           return;
                         }
                         setMode('practice');

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, ArrowRight, Upload, Sparkles } from 'lucide-react';
 import { api, Button, Field, Notice } from './ui';
+import IconButton from './IconButton';
 export default function NewKit({ onClose, onCreated }) {
   const dialog = useRef(null);
   const [busy, setBusy] = useState(false),
@@ -70,9 +71,14 @@ export default function NewKit({ onClose, onCreated }) {
           <span className="eyebrow">
             <Sparkles size={15} /> START WITH AN OPPORTUNITY
           </span>
-          <button type="button" className="icon-btn" aria-label="Close dialog" onClick={onClose}>
+          <IconButton
+            type="button"
+            className="icon-btn"
+            aria-label="Close dialog"
+            onClick={onClose}
+          >
             <X size={20} />
-          </button>
+          </IconButton>
         </div>
         <h2>Let’s get you ready.</h2>
         <p className="muted">A little context from you. A tailored preparation kit from us.</p>
