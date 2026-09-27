@@ -162,6 +162,79 @@ export async function generateCategory(client, requirements, category, research)
       pinned: false,
     }));
 }
+
+export async function generateAdditionalQuestions(kit, count) {
+  const warnings = [];
+  const client = new ModelClient({
+    deadline: Date.now() + 60000,
+    onWarning: (warning) => warnings.push(warning),
+  });
+  const requirements = kit.role.requirements;
+  if (!requirements.length) return kit;
+  const fallback = Array.from({ length: count }, (_, index) => {
+    const requirement = requirements[index % requirements.length];
+    const question = templateQuestion(
+      requirement,
+      categoryFor(requirement),
+      kit.research?.hiring_process || '',
+    );
+    return {
+      ...question,
+      id: stableId('q', `${question.id}:extra:${index}`),
+      prompt: `${question.prompt} Practice variation ${index + 1}.`,
+    };
+  });
+  const result = await client.json(
+    `Create exactly ${count} distinct interview questions. Ground every question in the supplied requirements, vary difficulty and question style, and do not repeat existing questions. Return {"questions":[{"requirement_ids":["provided-id"],"category":"technical","prompt":"...","answer_outline":"...","difficulty":2}]}.`,
+    {
+      requirements,
+      existing_questions: kit.questions.map((question) => question.prompt).slice(0, 200),
+      company: kit.source.company,
+      hiring_process: kit.research?.hiring_process || '',
+    },
+    z.object({
+      questions: z
+        .array(questionSchema.omit({ id: true, origin: true, pinned: true }))
+        .max(count),
+    }),
+    () => ({ questions: fallback }),
+  );
+  const allowed = new Set(requirements.map((requirement) => requirement.id));
+  const existingIds = new Set(kit.questions.map((question) => question.id));
+  const generated = result.questions
+    .filter(
+      (question) =>
+        question.requirement_ids.length &&
+        question.requirement_ids.every((id) => allowed.has(id)),
+    )
+    .slice(0, count)
+    .map((question, index) => ({
+      ...question,
+      id: stableId('q', `extra:${question.category}:${question.prompt}:${index}`),
+      origin: 'generated',
+      pinned: false,
+    }));
+  while (generated.length < count) generated.push(fallback[generated.length]);
+  for (const question of generated) {
+    let id = question.id;
+    let suffix = 1;
+    while (existingIds.has(id)) id = `${question.id}-${suffix++}`;
+    question.id = id;
+    existingIds.add(id);
+  }
+  const questions = [...generated, ...kit.questions];
+  const next = {
+    ...kit,
+    questions,
+    coverage: {
+      ...kit.coverage,
+      uncovered_requirement_ids: checkCoverage(kit.role.requirements, questions),
+    },
+    schedule: reconcileSchedule(kit, questions),
+  };
+  if (next.research) next.research.warnings = [...new Set([...next.research.warnings, ...warnings])];
+  return validateKit(next);
+}
 function fallbackBrief(research) {
   const page = research.pages.find((p) =>
     research.sources.some((s) => s.url === p.url && s.kind === 'company'),

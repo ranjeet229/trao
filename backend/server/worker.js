@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { generateKit, regenerateSection } from '../src/core/pipeline.js';
+import { generateAdditionalQuestions, generateKit, regenerateSection } from '../src/core/pipeline.js';
 
 export function startWorker(db, { interval = 1000, pipeline = generateKit } = {}) {
   let stopped = false,
@@ -87,7 +87,10 @@ export function startWorker(db, { interval = 1000, pipeline = generateKit } = {}
         return;
       }
       let kit;
-      if (job.section) {
+      if (job.questionCount) {
+        await update('generating', 30, `Generating ${job.questionCount} additional questions`);
+        kit = await generateAdditionalQuestions(record.kit, job.questionCount);
+      } else if (job.section) {
         await update('regenerating', 30, `Regenerating ${job.section}`);
         kit = await regenerateSection(record.kit, job.section);
       } else

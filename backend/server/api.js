@@ -340,6 +340,34 @@ export function createApi(db, { sessionStore, production = false } = {}) {
       .updateOne({ _id: job._id }, { $setOnInsert: job }, { upsert: true });
     res.status(202).json({ job });
   });
+  app.post('/api/kits/:id/generate-questions', generationLimit, async (req, res) => {
+    const { count, revision } = z
+      .object({ count: z.number().int().min(1).max(100), revision: z.number().int() })
+      .parse(req.body);
+    if (!req.record.kit) return error(res, 409, 'NOT_READY', 'Kit is not ready.');
+    if (req.record.kit.questions.length + count > 500)
+      return error(res, 422, 'QUESTION_LIMIT', 'A kit can contain up to 500 questions.');
+    const pendingJob = { id: randomUUID(), questionCount: count, createdAt: new Date() };
+    const changed = await db.collection('kits').updateOne(
+      { _id: req.record._id, revision, status: 'ready' },
+      { $set: { status: 'regenerating', pendingJob } },
+    );
+    if (!changed.matchedCount)
+      return error(res, 409, 'REVISION_CONFLICT', 'Save or reload the latest kit before generating.');
+    const job = {
+      _id: pendingJob.id,
+      kitId: req.record._id,
+      userId: req.session.user.id,
+      questionCount: count,
+      status: 'queued',
+      percent: 0,
+      stage: 'queued',
+      message: `Generating ${count} questions`,
+      createdAt: new Date(),
+    };
+    await db.collection('jobs').updateOne({ _id: job._id }, { $setOnInsert: job }, { upsert: true });
+    res.status(202).json({ job });
+  });
   app.post('/api/kits/:id/retry', generationLimit, async (req, res) => {
     const pendingJob = { id: randomUUID(), createdAt: new Date() };
     const result = await db

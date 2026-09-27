@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { X, ArrowRight, Upload, Sparkles } from 'lucide-react';
+import { X, ArrowRight, Upload } from 'lucide-react';
 import { api, Button, Field, Notice } from './ui';
 import IconButton from './IconButton';
 export default function NewKit({ onClose, onCreated }) {
@@ -11,6 +11,17 @@ export default function NewKit({ onClose, onCreated }) {
   useEffect(() => {
     dialog.current.showModal();
   }, []);
+  function closeOnBackdropClick(event) {
+    const bounds = dialog.current?.getBoundingClientRect();
+    if (
+      bounds &&
+      (event.clientX < bounds.left ||
+        event.clientX > bounds.right ||
+        event.clientY < bounds.top ||
+        event.clientY > bounds.bottom)
+    )
+      onClose();
+  }
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
@@ -65,12 +76,14 @@ export default function NewKit({ onClose, onCreated }) {
     }
   }
   return (
-    <dialog ref={dialog} className="modal" onCancel={onClose}>
+    <dialog
+      ref={dialog}
+      className="modal"
+      onCancel={onClose}
+      onClick={closeOnBackdropClick}
+    >
       <form onSubmit={submit}>
-        <div className="modal-head">
-          <span className="eyebrow">
-            <Sparkles size={15} /> START WITH AN OPPORTUNITY
-          </span>
+        <div className="modal-head modal-head-close">
           <IconButton
             type="button"
             className="icon-btn"

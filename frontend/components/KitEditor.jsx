@@ -49,7 +49,8 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [saved, setSaved] = useState(false),
-    [json, setJson] = useState(null);
+    [json, setJson] = useState(null),
+    [questionCount, setQuestionCount] = useState(30);
   useEffect(() => {
     if (!dirty) setKit(record.kit);
   }, [record.revision]);
@@ -129,6 +130,27 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
       const { job } = await api(`/kits/${record._id}/regenerate`, {
         method: 'POST',
         body: JSON.stringify({ section, revision }),
+      });
+      onUpdate({ ...record, revision, kit, status: 'regenerating', job });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function generateMoreQuestions() {
+    setError('');
+    setBusy(true);
+    try {
+      let revision = record.revision;
+      if (dirty) {
+        const result = await save();
+        if (!result) return;
+        revision = result.revision;
+      }
+      const { job } = await api(`/kits/${record._id}/generate-questions`, {
+        method: 'POST',
+        body: JSON.stringify({ count: questionCount, revision }),
       });
       onUpdate({ ...record, revision, kit, status: 'regenerating', job });
     } catch (e) {
@@ -503,26 +525,46 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                 <span className="eyebrow">PRACTISE THE QUESTIONS THAT MATTER</span>
                 <h2>Your question bank.</h2>
               </div>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  itemsUpdate('questions', [
-                    {
-                      id: uid('q'),
-                      prompt: 'Your new question',
-                      answer_outline: '',
-                      requirement_ids: [],
-                      category: category === 'all' ? 'technical' : category,
-                      difficulty: 2,
-                      origin: 'manual',
-                      pinned: false,
-                    },
-                    ...kit.questions,
-                  ])
-                }
-              >
-                <Plus size={16} /> Add question
-              </Button>
+              <div className="question-actions">
+                <label>
+                  <input
+                    aria-label="Number of AI questions to generate"
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={questionCount}
+                    onChange={(event) => setQuestionCount(Number(event.target.value) || 1)}
+                  />
+                </label>
+                <Button
+                  variant="secondary"
+                  busy={busy}
+                  disabled={record.status === 'regenerating'}
+                  onClick={generateMoreQuestions}
+                >
+                  <Plus size={16} /> Generate more with AI
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    itemsUpdate('questions', [
+                      {
+                        id: uid('q'),
+                        prompt: 'Your new question',
+                        answer_outline: '',
+                        requirement_ids: [],
+                        category: category === 'all' ? 'technical' : category,
+                        difficulty: 2,
+                        origin: 'manual',
+                        pinned: false,
+                      },
+                      ...kit.questions,
+                    ])
+                  }
+                >
+                  <Plus size={16} /> Add question
+                </Button>
+              </div>
             </div>
             <div className="filter-row">
               <div className="chips">
@@ -648,7 +690,6 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                 variant="secondary"
                 onClick={() =>
                   itemsUpdate('flashcards', [
-                    ...kit.flashcards,
                     {
                       id: uid('f'),
                       front: 'Your new flashcard',
@@ -657,6 +698,7 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                       origin: 'manual',
                       pinned: false,
                     },
+                    ...kit.flashcards,
                   ])
                 }
               >
