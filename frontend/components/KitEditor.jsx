@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -50,7 +50,15 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
     [error, setError] = useState(''),
     [saved, setSaved] = useState(false),
     [json, setJson] = useState(null),
-    [questionCount, setQuestionCount] = useState(30);
+    [questionCount, setQuestionCount] = useState(30),
+    [isQuestionCountDialogOpen, setIsQuestionCountDialogOpen] = useState(false);
+  const questionCountDialog = useRef(null);
+  useEffect(() => {
+    const dialog = questionCountDialog.current;
+    if (!dialog) return;
+    if (isQuestionCountDialogOpen && !dialog.open) dialog.showModal();
+    if (!isQuestionCountDialogOpen && dialog.open) dialog.close();
+  }, [isQuestionCountDialogOpen]);
   useEffect(() => {
     if (!dirty) setKit(record.kit);
   }, [record.revision]);
@@ -158,6 +166,20 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
     } finally {
       setBusy(false);
     }
+  }
+  function closeQuestionCountDialog() {
+    setIsQuestionCountDialogOpen(false);
+  }
+  function closeQuestionCountDialogOnBackdrop(event) {
+    const bounds = questionCountDialog.current?.getBoundingClientRect();
+    if (
+      bounds &&
+      (event.clientX < bounds.left ||
+        event.clientX > bounds.right ||
+        event.clientY < bounds.top ||
+        event.clientY > bounds.bottom)
+    )
+      closeQuestionCountDialog();
   }
   function download() {
     const blob = new Blob([JSON.stringify(kit, null, 2)], { type: 'application/json' });
@@ -526,21 +548,11 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                 <h2>Your question bank.</h2>
               </div>
               <div className="question-actions">
-                <label>
-                  <input
-                    aria-label="Number of AI questions to generate"
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={questionCount}
-                    onChange={(event) => setQuestionCount(Number(event.target.value) || 1)}
-                  />
-                </label>
                 <Button
                   variant="secondary"
                   busy={busy}
                   disabled={record.status === 'regenerating'}
-                  onClick={generateMoreQuestions}
+                  onClick={() => setIsQuestionCountDialogOpen(true)}
                 >
                   <Plus size={16} /> Generate more with AI
                 </Button>
@@ -566,6 +578,43 @@ export default function KitEditor({ record, onUpdate, onDirty }) {
                 </Button>
               </div>
             </div>
+            <dialog
+              ref={questionCountDialog}
+              className="modal question-count-dialog"
+              aria-labelledby="question-count-dialog-title"
+              onCancel={closeQuestionCountDialog}
+              onClick={closeQuestionCountDialogOnBackdrop}
+            >
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  closeQuestionCountDialog();
+                  generateMoreQuestions();
+                }}
+              >
+                <h2 id="question-count-dialog-title">How many questions?</h2>
+                <p className="muted">Select the number of AI-generated questions to add.</p>
+                <Field label="Number of questions">
+                  <input
+                    aria-label="Number of AI questions to generate"
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={questionCount}
+                    onChange={(event) => setQuestionCount(Number(event.target.value) || 1)}
+                    autoFocus
+                  />
+                </Field>
+                <div className="question-count-dialog-actions">
+                  <Button type="button" variant="secondary" onClick={closeQuestionCountDialog}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" busy={busy}>
+                    Generate questions
+                  </Button>
+                </div>
+              </form>
+            </dialog>
             <div className="filter-row">
               <div className="chips">
                 {['all', ...categories].map((c) => (

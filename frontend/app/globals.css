@@ -834,10 +834,20 @@ input[type='checkbox'] {
   align-items: center;
   gap: 10px;
 }
-.question-actions input {
-  width: 64px;
-  min-height: 40px;
-  padding: 8px;
+.question-count-dialog {
+  width: min(420px, calc(100% - 30px));
+}
+.question-count-dialog h2 {
+  font-size: 27px;
+}
+.question-count-dialog .field input {
+  max-width: 140px;
+}
+.question-count-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
 }
 .section-heading h2 {
   margin: 8px 0;
